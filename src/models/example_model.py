@@ -3,6 +3,7 @@
 This module contains pure Python classes with no Qt dependencies.
 Models represent domain entities and business logic.
 """
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -29,11 +30,7 @@ class ExampleModel:
         Returns:
             True if data is valid, False otherwise.
         """
-        return (
-            self.id > 0 and
-            len(self.name) > 0 and
-            self.value >= 0
-        )
+        return self.id > 0 and len(self.name) > 0 and self.value >= 0
 
     def calculate_doubled_value(self) -> float:
         """Example business logic method.

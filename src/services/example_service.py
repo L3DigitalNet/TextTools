@@ -3,10 +3,11 @@
 Services handle external integrations, file I/O, API calls, etc.
 They are injected into ViewModels.
 """
+
 import logging
 from typing import List
-from src.models.example_model import ExampleModel
 
+from src.models.example_model import ExampleModel
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 class ExampleService:
     """Example service demonstrating external operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the service."""
         self._data_cache: List[ExampleModel] = []
 

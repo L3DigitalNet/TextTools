@@ -5,6 +5,10 @@ on:
     branches: [ main, testing ]
   pull_request:
     branches: [ main ]
+  schedule:
+    # Daily 06:00 UTC — picks up new black/ruff/mypy releases without waiting for a push.
+    - cron: '0 6 * * *'
+  workflow_dispatch:
 
 jobs:
   test:
@@ -50,24 +54,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python 3.14
-      uses: actions/setup-python@v5
+    # Track-latest lint tooling: setup-uv (SHA-pinned for supply-chain safety) installs the
+    # freshest black/isort/mypy on every run. Daily cron + cache bypass on schedule means
+    # upstream formatting changes are absorbed in one commit instead of festering until the
+    # next push fails.
+    - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       with:
-        python-version: '3.14'
+        python-version: "3.13"
 
-    - name: Install uv
-      run: pip install uv
-
-    - name: Install dependencies
+    - name: Install latest linting tools
+      env:
+        # Scheduled runs bypass the cache so a fresh resolve hits PyPI for new releases.
+        UV_CACHE_DIR: ${{ github.event_name == 'schedule' && runner.temp || '/home/runner/.cache/uv' }}
       run: |
-        uv pip install --system black isort mypy
-        uv pip install --system -r requirements.txt
+        uv tool install --upgrade black
+        uv tool install --upgrade isort
+        # mypy needs project deps on its sys.path to resolve imports, so install them into
+        # mypy's isolated tool env via --with-requirements.
+        uv tool install --upgrade --with-requirements requirements.txt mypy
 
     - name: Check formatting with black
-      run: black --check src/ tests/
+      run: uv tool run black --check src/ tests/
 
     - name: Check import sorting with isort
-      run: isort --check-only src/ tests/
+      run: uv tool run isort --check-only src/ tests/
 
     - name: Type check with mypy
-      run: mypy src/
+      run: uv tool run mypy src/
